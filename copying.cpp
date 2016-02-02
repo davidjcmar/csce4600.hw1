@@ -31,7 +31,7 @@ int main (void)
 		stringstream convert_itoa;
 		string gen_f;
 		string make_file;
-		convert_itoa<<i;
+		convert_itoa<<"/tmp/"<<i;
 		gen_f = gen_file + convert_itoa.str() + " of=" + convert_itoa.str() + " >/dev/null 2>&1";
 
 		system(gen_f.c_str()); // system call to dd to quietly generate i * KB (1024) bits quietly
