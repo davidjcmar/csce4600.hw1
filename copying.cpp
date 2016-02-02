@@ -31,12 +31,16 @@ int main (void)
 		stringstream convert_itoa;
 		string gen_f;
 		string make_file;
+
+		convert_itoa<<i;
+		gen_f = gen_file + convert_itoa.str() + " of=";
+		convert_itoa.str("");
 		convert_itoa<<"/tmp/"<<i;
-		gen_f = gen_file + convert_itoa.str() + " of=" + convert_itoa.str() + " >/dev/null 2>&1";
+		gen_f = gen_f + convert_itoa.str() + " >/dev/null 2>&1";
 
 		system(gen_f.c_str()); // system call to dd to quietly generate i * KB (1024) bits quietly
 		gen_f = convert_itoa.str();
-		
+
 		/* system call */
 		buffer = (char*)malloc(sizeof(char) * (i*KB));
 		fd_in = open(gen_f.c_str(), O_RDONLY);
@@ -44,11 +48,12 @@ int main (void)
 		make_file = "touch " + gen_f;
 		system(make_file.c_str());
 		fd_out = open(gen_f.c_str(), O_WRONLY);
-		
+		/* start clock */	
 		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time) == 0)
 		{
 			byte_num = read(fd_in, buffer, (i*KB));
 			byte_num=write(fd_out, buffer, byte_num);
+			/* end clock */
 			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time);
 			elapse_time = stop_time.tv_sec - start_time.tv_sec;
 			elapse_time += ((stop_time.tv_nsec/1E9) - (start_time.tv_nsec/1E9));
