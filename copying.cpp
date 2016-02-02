@@ -4,6 +4,10 @@
 #include <cstring>
 #include <sstream>
 #include <cstdlib>
+#include <sys/resource.h>
+#include <sys/times.h>
+#include <time.h>
+#include <iomanip>
 #define KB 1024
 
 using namespace std;
@@ -14,7 +18,8 @@ int main (void)
 	char* buffer;
 	FILE* infile;
 	FILE* outfile;
-	//string gen_file = "dd if=/dev/urandom of=test bs=KB count=";
+	struct timespec start_time, stop_time;
+	double elapse_time;
 	string gen_file = "dd if=/dev/urandom bs=1024 count=";
 
 	/* genertae file */
@@ -23,10 +28,11 @@ int main (void)
 		stringstream convert_itoa;
 		string gen_f;
 		convert_itoa<<i;
-		gen_f = gen_file + convert_itoa.str() + " of=" + convert_itoa.str();
-		//cout<<gen_f<<"\n";
-		system(gen_f.c_str());
+		gen_f = gen_file + convert_itoa.str() + " of=" + convert_itoa.str() + " >/dev/null 2>&1";
+
+		system(gen_f.c_str()); // system call to dd to quietly generate i * KB (1024) bits quietly
 		gen_f = convert_itoa.str();
+
 		/* set dynamic values*/
 		infile = fopen(gen_f.c_str(), "r");
 		gen_f += "_out";
@@ -35,11 +41,22 @@ int main (void)
 		/* system call */
 
 		/* library call */
-		fread(buffer, 1, (i*KB)+1, infile);
-		fwrite(buffer, 1, (i*KB)+1, outfile);
-
+		if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time) == 0)
+		{	
+			fread(buffer, 1, (i*KB)+1, infile);
+			fwrite(buffer, 1, (i*KB)+1, outfile);
+			clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time);
+			elapse_time = stop_time.tv_sec - start_time.tv_sec;
+			elapse_time += ((stop_time.tv_nsec/1E9) - (start_time.tv_nsec/1E9));
+			cout<<i*KB<<"->"<<elapse_time<<"\n"; // output elapsed time
+		}
+		else
+		{
+			cout<<"ERROR: Clock failed.\n";
+			return 1;
+		}
 		/* testing */
-		cout<<"buffer size: "<<sizeof(buffer)<<" -- "<<strlen(buffer)<<"\n";
+		//cout<<"buffer size: "<<sizeof(buffer)<<" -- "<<strlen(buffer)<<"\n";
 		//cout<<buffer<<"\n";
 		/* free allocated buffer */
 
